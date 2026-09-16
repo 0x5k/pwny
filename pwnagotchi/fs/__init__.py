@@ -7,7 +7,12 @@ import _thread
 import logging
 
 from time import sleep
-from distutils.dir_util import copy_tree
+try:
+    from distutils.dir_util import copy_tree
+except ModuleNotFoundError:
+    def copy_tree(src, dst, preserve_symlinks=True):
+        """Python 3.12+ replacement for the removed distutils helper."""
+        shutil.copytree(src, dst, symlinks=preserve_symlinks, dirs_exist_ok=True)
 
 mounts = list()
 

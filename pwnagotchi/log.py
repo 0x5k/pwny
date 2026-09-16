@@ -10,7 +10,25 @@ from datetime import datetime
 
 from pwnagotchi.voice import Voice
 from pwnagotchi.mesh.peer import Peer
-from file_read_backwards import FileReadBackwards
+try:
+    from file_read_backwards import FileReadBackwards
+except ImportError:
+    class FileReadBackwards:
+        """Small dependency-free fallback for the OG reverse log reader."""
+
+        def __init__(self, path, encoding="utf-8"):
+            self.path = path
+            self.encoding = encoding
+
+        def __enter__(self):
+            with open(self.path, "r", encoding=self.encoding) as stream:
+                self.lines = stream.readlines()
+            self.lines.reverse()
+            return iter(self.lines)
+
+        def __exit__(self, exc_type, exc, tb):
+            self.lines = []
+            return False
 
 LAST_SESSION_FILE = '/root/.pwnagotchi-last-session'
 

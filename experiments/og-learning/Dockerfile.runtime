@@ -1,0 +1,10 @@
+FROM --platform=linux/arm64 python:3.7.17-slim-bullseye@sha256:603879aeff06df23f0d392a19f7ce02aa85e14e6b4d25fd9647b116e0cb93467 AS runtime-base
+RUN printf 'deb [check-valid-until=no] https://snapshot.debian.org/archive/debian/20230612T000000Z bullseye main\n' > /etc/apt/sources.list && apt-get update && apt-get install -y --no-install-recommends libopenblas0 libhdf5-103-1 libopenmpi3 libgl1 libglib2.0-0 squashfs-tools && rm -rf /var/lib/apt/lists/*
+
+FROM runtime-base
+COPY wheelhouse/ /wheelhouse/
+COPY requirements.lock /experiment/requirements.lock
+RUN python -m pip install --force-reinstall --no-index --find-links=/wheelhouse --require-hashes -r /experiment/requirements.lock && python -m pip check && rm -rf /wheelhouse && mkdir -p /workspace /results /out
+COPY workspace/ /workspace/
+ENV OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 TF_NUM_INTRAOP_THREADS=1 TF_NUM_INTEROP_THREADS=1 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+WORKDIR /workspace

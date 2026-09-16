@@ -21,6 +21,44 @@ def do_clear(display):
     sys.exit(0)
 
 
+def run_display_loop(display, interval):
+    """Show the original face and live device status while capture is stopped."""
+    from pwnagotchi.ui.standby import frame_data, read_radio_status
+
+    stopping = False
+
+    def request_stop(*unused):
+        nonlocal stopping
+        stopping = True
+
+    signal.signal(signal.SIGINT, request_stop)
+    signal.signal(signal.SIGTERM, request_stop)
+
+    display.on_starting()
+    last_message = None
+
+    try:
+        while not stopping:
+            state = frame_data(read_radio_status(), pwnagotchi.uptime())
+            if state['status'] != last_message:
+                logging.info('display standby: %s', state['status'])
+                last_message = state['status']
+            display.update(force=True, new_data=state)
+            deadline = time.monotonic() + interval
+            while not stopping:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                time.sleep(min(0.25, remaining))
+    finally:
+        try:
+            display.on_shutdown()
+            time.sleep(2)
+            display._implementation.sleep()
+        except Exception as exc:
+            logging.warning('display loop cleanup: %s', exc)
+
+
 def do_manual_mode(agent):
     logging.info("entering manual mode ...")
 
@@ -102,6 +140,14 @@ if __name__ == '__main__':
     parser.add_argument('--clear', dest="do_clear", action="store_true", default=False,
                         help="Clear the ePaper display and exit.")
 
+    parser.add_argument('--display-only', dest="display_only", action="store_true", default=False,
+                        help="Render the OG startup face without starting Bettercap or the agent.")
+
+    parser.add_argument('--display-loop', dest="display_loop", action="store_true", default=False,
+                        help="Show the OG face with live device status while the agent is stopped.")
+    parser.add_argument('--display-loop-interval', dest="display_loop_interval", type=float, default=8.0,
+                        help="Seconds between standby status updates.")
+
     parser.add_argument('--debug', dest="debug", action="store_true", default=False,
                         help="Enable debug logs.")
 
@@ -130,11 +176,8 @@ if __name__ == '__main__':
         print(toml.dumps(config, encoder=DottedTomlEncoder()))
         sys.exit(0)
 
-    from pwnagotchi.identity import KeyPair
-    from pwnagotchi.agent import Agent
     from pwnagotchi.ui import fonts
     from pwnagotchi.ui.display import Display
-    from pwnagotchi import grid
     from pwnagotchi import plugins
 
     pwnagotchi.config = config
@@ -152,6 +195,29 @@ if __name__ == '__main__':
         do_clear(display)
         sys.exit(0)
 
+    if args.display_loop:
+        if args.display_loop_interval <= 0:
+            parser.error('--display-loop-interval must be greater than zero')
+        run_display_loop(display, args.display_loop_interval)
+        sys.exit(0)
+
+    if args.display_only:
+        display.on_starting()
+        # Use the OG View to construct the frame, then render synchronously.
+        # The normal daemon uses a worker thread, but a one-shot preview must
+        # not race that worker against GPIO cleanup.
+        display._canvas_next_event.clear()
+        display._implementation.render(display._canvas)
+        time.sleep(2)
+        try:
+            display._implementation.sleep()
+        except Exception as exc:
+            logging.warning("display-only cleanup: %s", exc)
+        sys.exit(0)
+
+    from pwnagotchi.identity import KeyPair
+    from pwnagotchi.agent import Agent
+    from pwnagotchi import grid
     agent = Agent(view=display, config=config, keypair=KeyPair(view=display))
 
     def usr1_handler(*unused):

@@ -137,7 +137,7 @@ class Automata(object):
 
         plugins.on('epoch', self, self._epoch.epoch - 1, self._epoch.data())
 
-        if self._epoch.blind_for >= self._config['main']['mon_max_blind_epochs']:
+        if not self._config['main'].get('rust_recon', False) and self._epoch.blind_for >= self._config['main']['mon_max_blind_epochs']:
             logging.critical("%d epochs without visible access points -> rebooting ...", self._epoch.blind_for)
             self._reboot()
             self._epoch.blind_for = 0

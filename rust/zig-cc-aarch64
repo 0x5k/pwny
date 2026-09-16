@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    -Wl,--fix-cortex-a53-843419) continue ;;
+  esac
+  args+=("$arg")
+done
+exec zig cc -target aarch64-linux-gnu "${args[@]}"

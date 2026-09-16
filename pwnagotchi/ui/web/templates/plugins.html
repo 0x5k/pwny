@@ -49,8 +49,13 @@ $(function(){
              data: form.serialize(),
              success: function(data) {
                   if( data.indexOf('failed') != -1 ) {
+                      checkbox.prop('checked', !checkbox.prop('checked')).flipswitch('refresh');
                       alert('Could not be toggled.');
                   }
+            },
+             error: function(xhr) {
+                  checkbox.prop('checked', !checkbox.prop('checked')).flipswitch('refresh');
+                  alert('Plugin change failed (HTTP ' + xhr.status + '). Check the Pwnagotchi service log for the error.');
             }
         });
     });

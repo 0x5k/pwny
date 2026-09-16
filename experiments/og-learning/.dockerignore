@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!requirements.in
+!artifacts/
+!artifacts/tensorflow-1.15.5-cp37-cp37m-linux_aarch64.whl

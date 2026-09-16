@@ -33,6 +33,8 @@ class AsyncAdvertiser(object):
         return self._keypair.fingerprint
 
     def _update_advertisement(self, s):
+        if not self._config['personality']['advertise']:
+            return
         self._advertisement['pwnd_run'] = len(self._handshakes)
         self._advertisement['pwnd_tot'] = utils.total_unique_handshakes(self._config['bettercap']['handshakes'])
         self._advertisement['uptime'] = pwnagotchi.uptime()
@@ -50,6 +52,8 @@ class AsyncAdvertiser(object):
             logging.warning("advertising is disabled")
 
     def _on_face_change(self, old, new):
+        if not self._config['personality']['advertise']:
+            return
         self._advertisement['face'] = new
         grid.set_advertisement_data(self._advertisement)
 

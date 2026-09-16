@@ -19,6 +19,11 @@ pwnagotchi.egg-info
 *backup*.gz
 .vscode
 
+# rpi-image-gen build state and generated image artifacts
+image/.cache/
+image/.work/
+image/out/
+
 # Environments
 .env
 .venv
@@ -27,3 +32,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Personal learning notes and machine-specific infrastructure records.
+# Keep these in .local/ for local use; never publish them to GitHub.
+.local/
+# Local device configuration may contain API keys and identity settings.
+config.og.toml

@@ -24,15 +24,24 @@ def init(config):
 
 def status_font(old_font):
     global STATUS_FONT_NAME, SIZE_OFFSET
-    return ImageFont.truetype(STATUS_FONT_NAME, size=old_font.size + SIZE_OFFSET)
+    return _font(STATUS_FONT_NAME, old_font.size + SIZE_OFFSET)
+
+
+def _font(name, size):
+    try:
+        return ImageFont.truetype(name, size)
+    except OSError:
+        # Minimal images may not ship the optional DejaVu font files. Pillow's
+        # built-in bitmap font keeps the UI usable and observable.
+        return ImageFont.load_default()
 
 
 def setup(bold, bold_small, medium, huge, bold_big, small):
     global Bold, BoldSmall, Medium, Huge, BoldBig, Small, FONT_NAME
 
-    Small = ImageFont.truetype(FONT_NAME, small)
-    Medium = ImageFont.truetype(FONT_NAME, medium)
-    BoldSmall = ImageFont.truetype("%s-Bold" % FONT_NAME, bold_small)
-    Bold = ImageFont.truetype("%s-Bold" % FONT_NAME, bold)
-    BoldBig = ImageFont.truetype("%s-Bold" % FONT_NAME, bold_big)
-    Huge = ImageFont.truetype("%s-Bold" % FONT_NAME, huge)
+    Small = _font(FONT_NAME, small)
+    Medium = _font(FONT_NAME, medium)
+    BoldSmall = _font("%s-Bold" % FONT_NAME, bold_small)
+    Bold = _font("%s-Bold" % FONT_NAME, bold)
+    BoldBig = _font("%s-Bold" % FONT_NAME, bold_big)
+    Huge = _font("%s-Bold" % FONT_NAME, huge)

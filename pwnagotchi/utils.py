@@ -248,6 +248,12 @@ def load_config(args):
     elif config['ui']['display']['type'] in ('ws_2', 'ws2', 'waveshare_2', 'waveshare2'):
         config['ui']['display']['type'] = 'waveshare_2'
 
+    elif config['ui']['display']['type'] in (
+            'ws_4', 'ws4', 'waveshare_4', 'waveshare4',
+            'ws_213_v4', 'ws213_v4', 'ws_2in13_v4',
+            'waveshare_213_v4', 'waveshare2in13_v4', 'waveshare_2in13_v4'):
+        config['ui']['display']['type'] = 'waveshare_2in13_v4'
+
     elif config['ui']['display']['type'] in ('ws_27inch', 'ws27inch', 'waveshare_27inch', 'waveshare27inch'):
         config['ui']['display']['type'] = 'waveshare27inch'
 
@@ -292,18 +298,41 @@ def secs_to_hhmmss(secs):
 
 
 def total_unique_handshakes(path):
-    expr = os.path.join(path, "*.pcap")
-    return len(glob.glob(expr))
+    # Jay's capture backend writes pcapng; older OG captures remain valid.
+    return len({os.path.splitext(filename)[0]
+                for extension in ('pcap', 'pcapng')
+                for filename in glob.glob(os.path.join(path, '*.' + extension))
+                if os.path.isfile(filename)})
 
 
 def iface_channels(ifname):
     channels = []
-    output = subprocess.getoutput("/sbin/iwlist %s freq" % ifname)
+    iwlist = shutil.which('iwlist')
+    output = ''
+    if iwlist:
+        output = subprocess.run([iwlist, ifname, 'freq'], capture_output=True,
+                                text=True, timeout=5).stdout
     for line in output.split("\n"):
         line = line.strip()
         if line.startswith("Channel "):
             channels.append(int(line.split()[1]))
-    return channels
+    if channels:
+        return channels
+    iw = shutil.which('iw')
+    if not iw:
+        return []
+    info = subprocess.run([iw, 'dev', ifname, 'info'], capture_output=True,
+                          text=True, timeout=5).stdout
+    phy = re.search(r'^\s*wiphy (\d+)\s*$', info, re.MULTILINE)
+    if not phy:
+        return []
+    output = subprocess.run([iw, 'phy', 'phy' + phy.group(1), 'channels'],
+                            capture_output=True, text=True, timeout=5).stdout
+    for line in output.splitlines():
+        match = re.search(r'\*\s+\d+ MHz \[(\d+)\]', line)
+        if match and 'disabled' not in line:
+            channels.append(int(match.group(1)))
+    return sorted(set(channels))
 
 
 def led(on=True):

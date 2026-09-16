@@ -35,7 +35,11 @@ class Display(View):
         return self._implementation.name == 'waveshare_1'
 
     def is_waveshare_v2(self):
-        return self._implementation.name == 'waveshare_2'
+        # The 2.13-inch V4 deliberately reuses the 250x122 V2 UI layout.
+        return self._implementation.name in ('waveshare_2', 'waveshare_2in13_v4')
+
+    def is_waveshare_2in13_v4(self):
+        return self._implementation.name == 'waveshare_2in13_v4'
 
     def is_waveshare27inch(self):
         return self._implementation.name == 'waveshare27inch'

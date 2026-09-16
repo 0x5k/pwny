@@ -15,6 +15,7 @@ from pwnagotchi.log import LastSession
 from pwnagotchi.bettercap import Client
 from pwnagotchi.mesh.utils import AsyncAdvertiser
 from pwnagotchi.ai.train import AsyncTrainer
+from pwnagotchi.recon import read_snapshot
 
 RECOVERY_DATA_FILE = '/root/.pwnagotchi-recovery'
 
@@ -82,6 +83,9 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
         self.run('set wifi.handshakes.aggregate false')
 
     def start_monitor_mode(self):
+        if self._config['main'].get('rust_recon', False):
+            logging.info("Rust owns capture and channel hopping; Bettercap provides API only")
+            return
         mon_iface = self._config['main']['iface']
         mon_start_cmd = self._config['main']['mon_start_cmd']
         restart = not self._config['main']['no_restart']
@@ -141,6 +145,9 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
         self.set_ready()
 
     def recon(self):
+        if self._config['main'].get('rust_recon', False):
+            self.wait_for(self._config['personality']['recon_time'], sleeping=False)
+            return
         recon_time = self._config['personality']['recon_time']
         max_inactive = self._config['personality']['max_inactive_scale']
         recon_mul = self._config['personality']['recon_inactive_multiplier']
@@ -179,9 +186,13 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
         whitelist = self._config['main']['whitelist']
         aps = []
         try:
-            s = self.session()
-            plugins.on("unfiltered_ap_list", self, s['wifi']['aps'])
-            for ap in s['wifi']['aps']:
+            if self._config['main'].get('rust_recon', False):
+                snapshot = read_snapshot('/run/pwnagotchi/recon.json')
+                discovered = snapshot['aps']
+            else:
+                discovered = self.session()['wifi']['aps']
+            plugins.on("unfiltered_ap_list", self, discovered)
+            for ap in discovered:
                 if ap['encryption'] == '' or ap['encryption'] == 'OPEN':
                     continue
                 elif ap['hostname'] not in whitelist \
@@ -192,7 +203,7 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
         except Exception as e:
             logging.exception("Error while getting acces points (%s)", e)
 
-        aps.sort(key=lambda ap: ap['channel'])
+        aps.sort(key=lambda ap: ap.get('channel', 0))
         return self.set_access_points(aps)
 
     def get_total_aps(self):
@@ -312,6 +323,19 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
 
     def _fetch_stats(self):
         while True:
+            if self._config['main'].get('rust_recon', False):
+                try:
+                    snapshot = read_snapshot('/run/pwnagotchi/recon.json')
+                    self._current_channel = snapshot.get('current_channel') or 0
+                    self._view.set('channel', str(self._current_channel))
+                    self.get_access_points()
+                    self._update_uptime({})
+                    self._update_counters()
+                    self._update_handshakes(0)
+                except (OSError, ValueError, KeyError, TypeError) as error:
+                    logging.warning("Rust recon unavailable: %s", error)
+                time.sleep(1)
+                continue
             s = self.session()
             self._update_uptime(s)
             self._update_advertisement(s)
@@ -401,6 +425,8 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
         return self._history[who] < self._config['personality']['max_interactions']
 
     def associate(self, ap, throttle=0):
+        if self._config['main'].get('rust_recon', False):
+            return  # The Rust backend is passive; Bettercap must not transmit/tune.
         if self.is_stale():
             logging.debug("recon is stale, skipping assoc(%s)", ap['mac'])
             return
@@ -422,6 +448,8 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
             self._view.on_normal()
 
     def deauth(self, ap, sta, throttle=0):
+        if self._config['main'].get('rust_recon', False):
+            return
         if self.is_stale():
             logging.debug("recon is stale, skipping deauth(%s)", sta['mac'])
             return
@@ -443,6 +471,8 @@ class Agent(Client, Automata, AsyncAdvertiser, AsyncTrainer):
             self._view.on_normal()
 
     def set_channel(self, channel, verbose=True):
+        if self._config['main'].get('rust_recon', False):
+            return  # Rust's hopping loop is the only channel owner.
         if self.is_stale():
             logging.debug("recon is stale, skipping set_channel(%d)", channel)
             return

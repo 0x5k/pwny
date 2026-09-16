@@ -1,0 +1,236 @@
+format = 1
+
+[[source]]
+name = "pwnagotchi"
+kind = "git"
+url = "https://github.com/evilsocket/pwnagotchi.git"
+revision = "ff91f9b2f8d7cc856f8c2c589a9dfaa91bf691e6"
+version = "v1.5.5"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+
+[[source]]
+name = "rpi-image-gen"
+kind = "git"
+url = "https://github.com/raspberrypi/rpi-image-gen.git"
+revision = "3f2c916086ad70197945bfc50ef953c1f6035f10"
+version = "v2.6.0"
+license = "BSD-3-Clause"
+profiles = ["diagnostic", "full"]
+
+[[source]]
+name = "nexmon-jayofelony"
+kind = "git"
+url = "https://github.com/jayofelony/nexmon.git"
+revision = "1654e1857766df92086dbfbed5ffd288efc9bd8c"
+version = "dev"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Tested BCM43430a1/7.45.98 firmware patch tree for the Pi Zero 2 W"
+
+[[source]]
+name = "brcmfmac-nexmon-dkms-jayofelony"
+kind = "git"
+url = "https://github.com/jayofelony/brcmfmac-nexmon-dkms.git"
+revision = "a4951d42604a1516c66d14dcfeb479ed52dbf7b2"
+version = "kali/master"
+license = "ISC"
+profiles = ["diagnostic", "full"]
+description = "Kernel driver paired with the tested Nexmon firmware"
+
+[[patch]]
+name = "nexmon-bcm43430a1-7.45.98-firmware"
+kind = "local-binary"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/lib/firmware/brcm/pwnagotchi-bcm43430a1-7.45.98.bin"
+sha256 = "93e1d1fe8e25a523bbb36be0e5b7d82e972c36e7327280a46af9dbb252bb6795"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Build output from nexmon-jayofelony revision 1654e185"
+
+[[patch]]
+name = "brcmfmac-nexmon-6.18.39-driver"
+kind = "local-binary"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/lib/modules/6.18.39+rpt-rpi-v8/updates/pwnagotchi-nexmon/brcmfmac.ko"
+sha256 = "6f296dbedecfba4a0e4e5db7d0d020bd71f6523e1bf77b333dde9fb7c11ee1b2"
+license = "ISC"
+profiles = ["diagnostic", "full"]
+description = "DKMS build output from brcmfmac-nexmon-dkms revision a4951d42"
+
+[[source]]
+name = "waveshare-epd2in13-v4"
+kind = "file"
+url = "https://raw.githubusercontent.com/waveshareteam/e-Paper/a794fbc39656b0f93938d1ffb3fdc77eaed9e9fc/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epd2in13_V4.py"
+revision = "a794fbc39656b0f93938d1ffb3fdc77eaed9e9fc"
+sha256 = "9f5df7236029898f06426dfd61b3a4361c3cfafad3835d1db28ffcd377a3a00c"
+license = "MIT (embedded in source)"
+profiles = ["diagnostic", "full"]
+
+[[source]]
+name = "waveshare-epdconfig"
+kind = "file"
+url = "https://raw.githubusercontent.com/waveshareteam/e-Paper/a794fbc39656b0f93938d1ffb3fdc77eaed9e9fc/RaspberryPi_JetsonNano/python/lib/waveshare_epd/epdconfig.py"
+revision = "a794fbc39656b0f93938d1ffb3fdc77eaed9e9fc"
+sha256 = "e53e361f5061b3a62ca143001e20afc530593035556addd57ecd4dbf815ec9f3"
+license = "MIT (embedded in source)"
+profiles = ["diagnostic", "full"]
+
+[[patch]]
+name = "waveshare-2in13-v4-og-backend"
+kind = "local-source"
+path = "pwnagotchi/ui/hw/waveshare2in13_v4.py"
+sha256 = "33a52ab3d31b6bcd751f3dd876611b098e9e5ceffd9051241a4d265af186620a"
+license = "GPL-3.0"
+profiles = ["full"]
+description = "Native OG UI backend for the pinned official Waveshare 2.13-inch V4 driver"
+
+[[patch]]
+name = "waveshare-epdconfig-gpio-sysfs-offset"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/patches/epdconfig-gpio-offset.py"
+sha256 = "74860420e67e7631cb9150ba95ef04dba666c8bd0fb46a88412fd8a59940ba14"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Maps BCM GPIO numbers to the modern sysfs chip offset used by Raspberry Pi kernels"
+
+[[patch]]
+name = "pwnagotchi-runtime-gate"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/local/bin/pwnagotchi-runtime"
+sha256 = "9a93350cdefe44b470cd7a5e715da10d8afb6f493bcb3eafbbf82892ba1ca9ca"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Fail-safe runtime launcher that reports missing Bettercap or monitor mode"
+
+[[patch]]
+name = "pwnagotchi-radio-setup"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/local/bin/pwnagotchi-radio-setup"
+sha256 = "a12e17f4efa8db8bbee40992028e4fefbe44a0a4568d81c5707df03d8d3ff1de"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Creates mon0 from the internal radio and reserves mon1 for a later external adapter"
+
+[[patch]]
+name = "pwnagotchi-radio-preflight"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/local/bin/pwnagotchi-radio-preflight"
+sha256 = "cfcab76f324e276725ee579bfd794f7848e163774a6123b30980d6b0220532a1"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Requires the internal mon0 while reporting optional external mon1 capability"
+
+[[patch]]
+name = "pwnagotchi-runtime-import-gate"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/libexec/pwnagotchi/runtime-check.py"
+sha256 = "b0fd77c88a8f578cba12e2ecca86117d3b949e06974e4654a06cc1678dfd2c93"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Proves the real Bettercap, identity, and Agent import path before capture"
+
+[[patch]]
+name = "pwnagotchi-file-read-backwards-fallback"
+kind = "local-source"
+path = "pwnagotchi/log.py"
+sha256 = "bbfb6ed89466a094430b839fe72c7ee244e2a4c9f64cdc2cd0542ada7365c091"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Dependency-free fallback for the OG reverse log reader on Debian Trixie"
+
+[[patch]]
+name = "pwnagotchi-distutils-copy-tree-fallback"
+kind = "local-source"
+path = "pwnagotchi/fs/__init__.py"
+sha256 = "af16d6dc47077533f7e07fa1ff930af52552a0dcf3542c6ee8d5dbd56a24fa95"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Python 3.12+ replacement for the removed distutils copy_tree helper"
+
+[[patch]]
+name = "pwnagotchi-font-fallback"
+kind = "local-source"
+path = "pwnagotchi/ui/fonts.py"
+sha256 = "5838e571b1a812df1326e1975923aab741b84fde20c3d2585ed9c92a82fd3b31"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Keeps the OG UI usable when optional font files are absent"
+
+[[patch]]
+name = "pwnagotchi-cryptodome-namespace"
+kind = "local-source"
+path = "pwnagotchi/identity.py"
+sha256 = "9400c079471e3dc21da1b977bd297b057b1b85f64684aff06e0ff48936e74b18"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Keeps OG RSA identity code compatible with Debian's Cryptodome namespace"
+
+[[patch]]
+name = "pwnagotchi-flask-wtf-fallback"
+kind = "local-source"
+path = "pwnagotchi/ui/web/server.py"
+sha256 = "422dd9ecc7e7ea348fa43ebea5906714f38e745f7762cb1973573674ee015fbe"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Preserves the OG web server when Debian Trixie lacks the optional Flask-WTF package"
+
+[[patch]]
+name = "pwnagotchi-face-preview"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/libexec/pwnagotchi/pwnagotchi-face-preview.py"
+sha256 = "92d849bcac725eed3c5920ac9620a6894a90cf46f8c11d26f0778b23147e2ea0"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Runs the real OG UI loop without requiring capture hardware"
+
+[[patch]]
+name = "pwnagotchi-mock-display"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/local/bin/pwnagotchi-mock-display"
+sha256 = "270350f6ebca21e4b470bac3f8cf2a31714cdd8ae9572d06bd266c011432ffc3"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Minimal direct e-ink mock frame for panel bring-up"
+
+[[patch]]
+name = "pwnagotchi-display-only-cli"
+kind = "local-source"
+path = "bin/pwnagotchi"
+sha256 = "e5911cfbb2c712834ed90a6868aa1dca55c4f329ea540cf415265a088a74808e"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Uses the OG CLI and UI stack for a capture-independent loop"
+
+[[patch]]
+name = "bettercap-jayofelony-pcapng"
+kind = "local-binary"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/bin/bettercap"
+sha256 = "10c12b15e7da71489588168523013833a241867c9902fba6be59ceb1930e196a"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "ARM64 build of jayofelony/bettercap pcapng branch 16a9918"
+
+[[source]]
+name = "bettercap-caplets"
+kind = "git"
+url = "https://github.com/bettercap/caplets.git"
+revision = "eb626871ad99ea8c4f9771f216caa2290e06a058"
+archive_sha256 = "e57368d15f8701eb97ddb2eccb5f6452e3aafe931c63af92ae147708c2ee81f9"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+
+[[source]]
+name = "pwngrid"
+kind = "release-archive"
+url = "https://github.com/evilsocket/pwngrid/releases/download/v1.10.3/pwngrid_linux_aarch64_v1.10.3.zip"
+archive_sha256 = "2dcaab0d079d7f3b8d9e4037abcd8f49647479453d9b7867a28985c85a65affb"
+license = "MIT"
+profiles = ["diagnostic", "full"]
+
+[[patch]]
+name = "pwnagotchi-bettercap-launcher"
+kind = "local-source"
+path = "image/layer/pwnagotchi-diagnostic/rootfs/usr/local/bin/pwnagotchi-bettercap"
+sha256 = "dc388fe2b14ee3c3224f16fd3967ddbd766374a47a88dc4574974299c2fe40d8"
+license = "GPL-3.0"
+profiles = ["diagnostic", "full"]
+description = "Starts bundled Bettercap on mon0 with REST API; OG starts Wi-Fi recon"

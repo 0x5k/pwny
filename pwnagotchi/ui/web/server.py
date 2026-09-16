@@ -5,11 +5,25 @@ import os
 
 # https://stackoverflow.com/questions/14888799/disable-console-messages-in-flask-server
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
-os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+os.environ.pop('WERKZEUG_RUN_MAIN', None)
 
 from flask import Flask
 from flask_cors import CORS
-from flask_wtf.csrf import CSRFProtect
+
+try:
+    from flask_wtf.csrf import CSRFProtect
+except ImportError:
+    # Debian Trixie does not ship Flask-WTF.  Keep the original OG web
+    # server usable with the distro Flask stack; when the optional extension
+    # is present, the real CSRF implementation above is used unchanged.
+    class CSRFProtect:
+        def __init__(self, app=None):
+            if app is not None:
+                self.init_app(app)
+
+        def init_app(self, app):
+            logging.warning("Flask-WTF unavailable; CSRF protection disabled")
+            app.jinja_env.globals.setdefault("csrf_token", lambda: "")
 
 from pwnagotchi.ui.web.handler import Handler
 
@@ -29,6 +43,10 @@ class Server:
 
     def _http_serve(self):
         if self._address is not None:
+            # systemd/container launchers may leave Flask's reloader socket
+            # variable set even though the server is not running a reloader.
+            os.environ.pop('WERKZEUG_SERVER_FD', None)
+            os.environ.pop('WERKZEUG_RUN_MAIN', None)
             web_path = os.path.dirname(os.path.realpath(__file__))
 
             app = Flask(__name__,
@@ -46,6 +64,6 @@ class Server:
 
             logging.info("web ui available at http://%s:%d/" % (self._address, self._port))
 
-            app.run(host=self._address, port=self._port, debug=False)
+            app.run(host=self._address, port=self._port, debug=False, use_reloader=False)
         else:
             logging.info("could not get ip of usb0, video server not starting")
