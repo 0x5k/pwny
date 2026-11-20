@@ -1,9 +1,11 @@
 *.img
 *.img.bmap
 *.pcap
+*.pcapng
 *.po~
 preview.png
-__pycache__
+__pycache__/
+*.py[cod]
 _backups
 _emulation
 _utils
